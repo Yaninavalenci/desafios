@@ -57,6 +57,8 @@ CREATE TABLE ordenes_de_trabajo(
 
 CREATE TABLE factura(
     id_factura INT NOT NULL AUTO_INCREMENT PRIMARY KEY, 
+    id_cliente INT NOT NULL,
+    FOREIGN KEY (id_cliente) REFERENCES clientes (id_cliente),
     id_orden INT NOT NULL,
     FOREIGN KEY (id_orden) REFERENCES ordenes_de_trabajo (id_orden),
     id_pago int NOT NULL,
@@ -109,12 +111,12 @@ VALUES (null, 1, 2, 6, 1, 'soldadora', '23-10-10', '23-10-20'),
 (null, 4, 3, 6, 3, 'lijadora', '23-10-12','23-10-19'),
 (null, 5, 5, 4, 3, 'caladora', '23-10-13', '23-10-13');
 
-insert INTO factura (id_factura, id_orden, id_pago, importe, fecha)
-VALUES (null, 1, 2, 2500, '23-10-20'),
-(null, 2, 2, 3000, '23-10-21'),
-(null, 3, 3, 1500, '23-10-22'),
-(null, 4, 3, 4000, '23-10-22'),
-(null, 5, 5, 5000, '23-10-24');
+insert INTO factura (id_factura, id_cliente, id_orden, id_pago, importe, fecha)
+VALUES (null, 2, 1, 2, 2500, '23-10-20'),
+(null, 2, 2, 2, 3000, '23-10-21'),
+(null, 3, 3, 3, 1500, '23-10-22'),
+(null, 4, 4, 3, 4000, '23-10-22'),
+(null, 5, 5, 5, 5000, '23-10-24');
 
 
 create or replace view item_recibido as
@@ -149,4 +151,37 @@ create or replace view orden_recibido as
  (select tipo_estado, id_orden, item from ordenes_de_trabajo o join estado e on (o.id_estado = e.id_estado)
  where tipo_estado = 'entregado'); 
 
+-- Funcion para Calcular el Tiempo promedio de reparacion por técnico
+
+DELIMITER $$
+CREATE FUNCTION calcularTiempoPromedioReparacionPorTecnico(idtecnico INT)
+RETURNS INT 
+DETERMINISTIC
+BEGIN
+    DECLARE tiempoPromedio INT;
+    SELECT AVG(DATEDIFF(fecha_inicio, fecha_fin)) INTO tiempoPromedio
+    FROM ordenes_de_trabajo
+    WHERE idtecnico = id_tecnico AND id_estado = 6;
+    RETURN tiempoPromedio;
+END;
+$$ 
+
+-- SELECT id_tecnico, calcularTiempoPromedioReparacionPorTecnico(id_tecnico) AS tiempoPromedio FROM ordenes_de_trabajo;
+
+-- Funcion para Calcular el importe total de las facturas a pagar por cliente.
+
+DELIMITER $$
+CREATE FUNCTION obtenerTotalFacturasPorCliente(idcliente INT)
+RETURNS INT 
+DETERMINISTIC
+BEGIN
+    DECLARE total INT;
+    SELECT sum(importe) into total
+    FROM factura
+    WHERE id_cliente = idcliente;
+    RETURN total;
+END;
+$$ 
+
+-- SELECT id_cliente, obtenerTotalFacturasPorCliente(id_cliente) AS totalFacturas FROM factura group by id_cliente;
 
