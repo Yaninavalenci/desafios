@@ -168,10 +168,10 @@ $$
 
 -- SELECT id_tecnico, calcularTiempoPromedioReparacionPorTecnico(id_tecnico) AS tiempoPromedio FROM ordenes_de_trabajo;
 
--- Funcion para Calcular el importe total de las facturas a pagar por cliente.
+-- Funcion para Calcular el importe saldo total a pagar por cliente.
 
 DELIMITER $$
-CREATE FUNCTION obtenerTotalFacturasPorCliente(idcliente INT)
+CREATE FUNCTION obtenerTotalSaldoPorCliente(idcliente INT)
 RETURNS INT 
 DETERMINISTIC
 BEGIN
@@ -183,5 +183,5 @@ BEGIN
 END;
 $$ 
 
--- SELECT id_cliente, obtenerTotalFacturasPorCliente(id_cliente) AS totalFacturas FROM factura group by id_cliente;
+-- SELECT id_cliente, obtenerTotalFacturasPorCliente(id_cliente) AS totalSaldo FROM factura group by id_cliente;
 
