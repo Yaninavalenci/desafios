@@ -187,6 +187,8 @@ $$
 
 -- SELECT id_cliente, obtenerTotalFacturasPorCliente(id_cliente) AS totalSaldo FROM factura group by id_cliente;
 
+-- Realicé un store procedure para ver los detalles de la orden de trabajo seleccionada.
+
 DELIMITER $$
 CREATE PROCEDURE ObtenerDetallesOrden (IN sp_id_orden INT)
 BEGIN
@@ -209,12 +211,64 @@ BEGIN
         o.id_orden = sp_id_orden;
 END $$
 
--- Realicé un store procedure para ver los detalles de la orden de trabajo seleccionada.
-
 CALL ObtenerDetallesOrden(2);
 
+-- Este un store procedure ordena alfabéticamente asc o des segun el parametro que le pase cualquier campo de la tabla tecnicos
 
--- Actualizar el estado de la orden de trabajo a estado facturada
+DELIMITER $$
+CREATE PROCEDURE sp_tecnicos_por_orden_alfabetico(IN field CHAR(20), IN order_direction CHAR(4))
+BEGIN
+    IF field <> '' THEN
+        SET @tecnicos_orden_alf = CONCAT('ORDER BY ', field);
+    ELSE
+        SET @tecnicos_orden_alf = '';
+    END IF;
+    
+    IF order_direction = 'ASC' THEN
+        SET @orden = 'ASC';
+    ELSE
+        SET @orden = 'DESC';
+    END IF;
+
+    SET @clausula = CONCAT('SELECT * FROM tecnicos ', @tecnicos_orden_alf, ' ', @orden);
+    PREPARE runSQL FROM @clausula;
+    EXECUTE runSQL;
+    DEALLOCATE PREPARE runSQL;
+END
+$$
+
+CALL sp_tecnicos_por_orden_alfabetico('apellido','DESC');
+
+-- Este store procedure indica si la carga del nuevo cliente fue exitosa, o si 1 o más campos quedan vacíos indica un Error
+
+DELIMITER $$
+CREATE PROCEDURE sp_insertar_cliente(
+    IN sp_nombre VARCHAR(255),
+    IN sp_apellido VARCHAR(255),
+    IN sp_telefono VARCHAR(20),
+    IN sp_dni VARCHAR(15),
+    OUT p_output VARCHAR(50))
+BEGIN
+    IF sp_nombre <> '' AND sp_apellido <> '' AND sp_telefono <> '' AND sp_dni <> '' THEN
+        INSERT INTO clientes (nombre, apellido, telefono, dni)
+        VALUES (sp_nombre, sp_apellido, sp_telefono, sp_dni);
+        SET p_output = 'Inserción exitosa';
+    ELSE
+        SET p_output = 'ERROR: no se pudo crear el cliente indicado';
+    END IF;
+    SET @clausula = 'SELECT * FROM clientes ORDER BY id_cliente DESC';
+    PREPARE runSQL FROM @clausula;
+    EXECUTE runSQL;
+    DEALLOCATE PREPARE runSQL;
+END $$
+
+CALL sp_insertar_cliente('Demi', 'Koro', '1122345678', '28555555', @result);
+SELECT @result as result_insertar_cliente;
+
+CALL sp_insertar_cliente('', '', '', '', @result);
+SELECT @result as result_insertar_cliente;
+
+-- Actualizar el estado de la orden de trabajo a estado facturada (7)
 
 DELIMITER $$
 CREATE TRIGGER AfterGenerarFactura
@@ -230,4 +284,7 @@ insert INTO factura (id_factura, id_cliente, id_orden, id_pago, importe, fecha)
 VALUES (null, 2, 1, 2, 2500, '23-10-28');
 
 Select * from ordenes_de_trabajo;
+
+
+
 
